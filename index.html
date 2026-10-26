@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f5f7f2">
+    <meta name="description" content="Get a quick, weather-based golf recommendation for your current location.">
+    <title>MyGolfBuddy | Your golf-day forecast</title>
+    <link rel="preconnect" href="https://api.open-meteo.com">
+    <link rel="preconnect" href="https://geocoding-api.open-meteo.com">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="./" aria-label="MyGolfBuddy home">
+            <span class="brand-mark" aria-hidden="true">MG</span>
+            <span>MyGolfBuddy</span>
+        </a>
+        <span class="header-note">Your golf-day forecast</span>
+    </header>
+
+    <main class="dashboard">
+        <section class="intro" aria-labelledby="page-title">
+            <p class="eyebrow">A better day starts with a forecast</p>
+            <h1 id="page-title">Is it a good day<br class="desktop-break"> to play golf?</h1>
+            <p class="intro-copy">We’ll check your local weather and give you a quick, easy-to-read recommendation.</p>
+        </section>
+
+        <section class="location-panel panel" aria-labelledby="location-heading">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">YOUR LOCATION</p>
+                    <h2 id="location-heading">Finding your forecast</h2>
+                </div>
+                <span class="location-icon" aria-hidden="true">⌖</span>
+            </div>
+            <p id="location-status" class="status-message" role="status" aria-live="polite">Requesting your location…</p>
+            <p id="coordinates" class="coordinates" hidden></p>
+            <form id="zip-form" class="zip-form">
+                <label for="zip-code">Use a ZIP code instead</label>
+                <div class="zip-controls">
+                    <input id="zip-code" name="zip-code" type="text" inputmode="numeric" autocomplete="postal-code"
+                        placeholder="e.g. 10001" maxlength="10" aria-describedby="zip-help">
+                    <button class="button button-secondary" type="submit">Check ZIP</button>
+                </div>
+                <span id="zip-help" class="field-help">Enter a US ZIP code to get local weather.</span>
+            </form>
+        </section>
+
+        <section id="forecast" class="forecast" aria-label="Local golf forecast" hidden>
+            <article class="score-card panel" aria-labelledby="score-label">
+                <div class="score-topline">
+                    <div>
+                        <p class="eyebrow">YOUR GOLF SCORE</p>
+                        <p id="score-label" class="score-rating">—</p>
+                    </div>
+                    <div class="score-number" aria-label="Golf score">
+                        <span id="score-value">—</span><span class="score-out-of">/100</span>
+                    </div>
+                </div>
+                <div class="score-track" role="progressbar" aria-label="Golf suitability score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="score-progress">
+                    <span id="score-bar" class="score-bar"></span>
+                </div>
+                <p id="recommendation" class="recommendation"></p>
+                <p id="score-explanation" class="score-explanation"></p>
+            </article>
+
+            <section class="weather-section" aria-labelledby="weather-heading">
+                <div class="weather-heading">
+                    <div>
+                        <p class="eyebrow">RIGHT NOW</p>
+                        <h2 id="weather-heading">Local conditions</h2>
+                    </div>
+                    <span id="weather-updated" class="updated-label"></span>
+                </div>
+                <div class="weather-grid">
+                    <article class="weather-card panel">
+                        <span class="weather-icon temperature-icon" aria-hidden="true">°</span>
+                        <p class="weather-label">Temperature</p>
+                        <p class="weather-value"><span id="temperature">—</span><span class="unit">°F</span></p>
+                        <p id="feels-like" class="weather-detail"></p>
+                    </article>
+                    <article class="weather-card panel">
+                        <span class="weather-icon wind-icon" aria-hidden="true">↗</span>
+                        <p class="weather-label">Wind speed</p>
+                        <p class="weather-value"><span id="wind-speed">—</span><span class="unit">mph</span></p>
+                        <p class="weather-detail">At your location</p>
+                    </article>
+                    <article class="weather-card condition-card panel">
+                        <span id="condition-icon" class="weather-icon condition-icon" aria-hidden="true">☀</span>
+                        <p class="weather-label">Conditions</p>
+                        <p id="condition" class="condition-value">—</p>
+                        <p id="precipitation-detail" class="weather-detail"></p>
+                    </article>
+                </div>
+                <p class="data-note">Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a></p>
+            </section>
+        </section>
+        <p id="error-message" class="error-message" role="alert" hidden></p>
+    </main>
+
+    <footer class="site-footer">
+        <p>Weather can change quickly. Always use your judgment before heading out.</p>
+    </footer>
+</body>
+</html>
