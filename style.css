@@ -461,6 +461,10 @@ h1 {
     margin: 0;
 }
 
+.site-footer .app-version {
+    margin-top: 8px;
+}
+
 @media (min-width: 620px) {
     .dashboard {
         padding-top: 56px;
