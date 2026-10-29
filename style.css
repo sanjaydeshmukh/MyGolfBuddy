@@ -331,6 +331,51 @@ h1 {
     line-height: 1.45;
 }
 
+.playability-guidance,
+.daylight-summary {
+    margin: 7px 0 0;
+    color: #e0eee2;
+    font-size: 0.84rem;
+    line-height: 1.5;
+}
+
+.daylight-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid rgb(255 255 255 / 22%);
+}
+
+.daylight-stat {
+    min-width: 0;
+}
+
+.daylight-label,
+.daylight-value {
+    display: block;
+}
+
+.daylight-label {
+    color: #c5e3ca;
+    font-size: 0.68rem;
+    line-height: 1.35;
+}
+
+.daylight-value {
+    margin-top: 4px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.daylight-summary {
+    margin-top: 13px;
+    font-weight: 600;
+}
+
 .score-explanation {
     margin: 7px 0 0;
     color: #e0eee2;

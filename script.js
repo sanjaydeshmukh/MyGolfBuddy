@@ -18,6 +18,11 @@
         scoreProgress: document.querySelector("#score-progress"),
         scoreBar: document.querySelector("#score-bar"),
         recommendation: document.querySelector("#recommendation"),
+        playabilityGuidance: document.querySelector("#playability-guidance"),
+        sunriseTime: document.querySelector("#sunrise-time"),
+        sunsetTime: document.querySelector("#sunset-time"),
+        remainingDaylight: document.querySelector("#remaining-daylight"),
+        daylightSummary: document.querySelector("#daylight-summary"),
         scoreExplanation: document.querySelector("#score-explanation"),
         temperature: document.querySelector("#temperature"),
         feelsLike: document.querySelector("#feels-like"),
@@ -203,12 +208,102 @@
         return "Poor conditions for golf right now.";
     }
 
+    function parseLocalDateTime(value) {
+        if (typeof value !== "string") return null;
+
+        const match = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::\d{2})?$/);
+        if (!match) return null;
+
+        const hour = Number(match[2]);
+        const minute = Number(match[3]);
+        if (hour > 23 || minute > 59) return null;
+
+        return { date: match[1], minutes: hour * 60 + minute };
+    }
+
+    function formatDaylightDuration(totalMinutes) {
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        const parts = [];
+
+        if (hours > 0) parts.push(`${hours} ${hours === 1 ? "hour" : "hours"}`);
+        if (minutes > 0) parts.push(`${minutes} ${minutes === 1 ? "minute" : "minutes"}`);
+        return parts.join(" and ");
+    }
+
+    function formatCompactDaylightDuration(totalMinutes) {
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
+        if (hours > 0) return `${hours}h`;
+        return `${minutes}m`;
+    }
+
+    function formatLocalTime(value) {
+        const parsed = parseLocalDateTime(value);
+        if (!parsed) return "Unavailable";
+
+        const hour = Math.floor(parsed.minutes / 60);
+        const minute = parsed.minutes % 60;
+        const period = hour < 12 ? "AM" : "PM";
+        const displayHour = hour % 12 || 12;
+        return `${displayHour}:${String(minute).padStart(2, "0")} ${period}`;
+    }
+
+    function getDaylightDetails(weather) {
+        const current = parseLocalDateTime(weather.time);
+        const sunrise = parseLocalDateTime(weather.sunrise);
+        const sunset = parseLocalDateTime(weather.sunset);
+        const isAfterSunset = current.minutes > sunset.minutes;
+        const daylightStart = Math.max(current.minutes, sunrise.minutes);
+        const remainingMinutes = isAfterSunset
+            ? 0
+            : Math.max(0, sunset.minutes - daylightStart);
+
+        let recommendation;
+        let guidance = "";
+        if (isAfterSunset) {
+            recommendation = "🌙 Not Playable Today";
+            guidance = "Try again tomorrow.";
+        } else if (remainingMinutes < 30) {
+            recommendation = "🌅 Insufficient Daylight";
+            guidance = "Try again tomorrow.";
+        } else if (remainingMinutes <= 60) {
+            recommendation = "⚠ Limited Daylight Remaining";
+            if (weather.rating === "Poor") {
+                guidance = "Weather conditions are not favorable for golf right now.";
+            }
+        } else if (weather.rating === "Poor") {
+            recommendation = "❌ Not Recommended";
+            guidance = "Weather conditions are not favorable for golf right now.";
+        } else if (remainingMinutes <= 120) {
+            recommendation = "✅ Good For A Short Round";
+        } else {
+            recommendation = "✅ Excellent For Golf";
+        }
+
+        return {
+            sunrise: weather.sunrise,
+            sunset: weather.sunset,
+            remainingMinutes,
+            recommendation,
+            guidance,
+            summary: remainingMinutes > 0
+                ? `You have approximately ${formatDaylightDuration(remainingMinutes)} of playable daylight remaining.`
+                : "You have no playable daylight remaining today."
+        };
+    }
+
     function capitalize(text) {
         return text.charAt(0).toUpperCase() + text.slice(1);
     }
 
     function validateCurrentWeather(payload) {
         const current = payload && payload.current;
+        const daily = payload && payload.daily;
+        const currentTime = current && parseLocalDateTime(current.time);
+        const sunrise = daily && Array.isArray(daily.sunrise) && parseLocalDateTime(daily.sunrise[0]);
+        const sunset = daily && Array.isArray(daily.sunset) && parseLocalDateTime(daily.sunset[0]);
         const requiredFields = [
             "temperature_2m",
             "apparent_temperature",
@@ -219,7 +314,10 @@
             "wind_speed_10m"
         ];
 
-        if (!current || requiredFields.some((field) => !Number.isFinite(current[field]))) {
+        if (!current || requiredFields.some((field) => !Number.isFinite(current[field])) ||
+            !currentTime || !sunrise || !sunset ||
+            sunrise.date !== currentTime.date || sunset.date !== currentTime.date ||
+            sunrise.minutes >= sunset.minutes) {
             throw new Error("Weather data was incomplete. Please try again.");
         }
 
@@ -232,7 +330,9 @@
             cloudCover: current.cloud_cover,
             windSpeed: current.wind_speed_10m,
             time: current.time,
-            timezone: payload.timezone
+            timezone: payload.timezone,
+            sunrise: daily.sunrise[0],
+            sunset: daily.sunset[0]
         };
     }
 
@@ -249,6 +349,7 @@
                 "cloud_cover",
                 "wind_speed_10m"
             ].join(","),
+            daily: "sunrise,sunset",
             temperature_unit: "fahrenheit",
             wind_speed_unit: "mph",
             precipitation_unit: "inch",
@@ -265,13 +366,19 @@
 
     function renderForecast(weather) {
         const scoreDetails = getScoreDetails(weather);
+        const daylightDetails = getDaylightDetails({ ...weather, rating: scoreDetails.rating });
         const condition = getWeatherDescription(weather.weatherCode);
 
         elements.scoreValue.textContent = String(scoreDetails.score);
         elements.scoreRating.textContent = scoreDetails.rating;
         elements.scoreProgress.setAttribute("aria-valuenow", String(scoreDetails.score));
         elements.scoreBar.style.width = `${scoreDetails.score}%`;
-        elements.recommendation.textContent = scoreDetails.recommendation;
+        elements.recommendation.textContent = daylightDetails.recommendation;
+        elements.playabilityGuidance.textContent = daylightDetails.guidance;
+        elements.sunriseTime.textContent = formatLocalTime(daylightDetails.sunrise);
+        elements.sunsetTime.textContent = formatLocalTime(daylightDetails.sunset);
+        elements.remainingDaylight.textContent = formatCompactDaylightDuration(daylightDetails.remainingMinutes);
+        elements.daylightSummary.textContent = daylightDetails.summary;
         elements.scoreExplanation.textContent = scoreDetails.explanation;
         elements.temperature.textContent = String(Math.round(weather.temperature));
         elements.feelsLike.textContent = `Feels like ${Math.round(weather.feelsLike)}°F`;

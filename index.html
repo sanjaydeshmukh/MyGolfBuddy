@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f5f7f2">
     <meta name="description" content="Get a quick, weather-based golf recommendation for your current location.">
-    <title>MyGolfBuddy v1.0.0</title>
+    <title>MyGolfBuddy v1.0.1</title>
     <link rel="preconnect" href="https://api.open-meteo.com">
     <link rel="preconnect" href="https://geocoding-api.open-meteo.com">
     <link rel="stylesheet" href="style.css">
@@ -63,6 +63,22 @@
                     <span id="score-bar" class="score-bar"></span>
                 </div>
                 <p id="recommendation" class="recommendation"></p>
+                <p id="playability-guidance" class="playability-guidance"></p>
+                <div class="daylight-grid" aria-label="Daylight information">
+                    <div class="daylight-stat">
+                        <span class="daylight-label">Sunrise</span>
+                        <span id="sunrise-time" class="daylight-value">—</span>
+                    </div>
+                    <div class="daylight-stat">
+                        <span class="daylight-label">Sunset</span>
+                        <span id="sunset-time" class="daylight-value">—</span>
+                    </div>
+                    <div class="daylight-stat">
+                        <span class="daylight-label">Remaining daylight</span>
+                        <span id="remaining-daylight" class="daylight-value">—</span>
+                    </div>
+                </div>
+                <p id="daylight-summary" class="daylight-summary"></p>
                 <p id="score-explanation" class="score-explanation"></p>
             </article>
 
@@ -101,9 +117,9 @@
     </main>
 
     <footer class="site-footer">
-        <p>Weather can change quickly. Always use your judgment before heading out.</p>
+        <p>Weather can change quickly. Always ugit sse your judgment before heading out.</p>
         <!-- Update this version and the browser tab title together for future releases. -->
-        <p class="app-version">MyGolfBuddy v1.0.0</p>
+        <p class="app-version">MyGolfBuddy v1.0.1</p>
     </footer>
 </body>
 </html>
