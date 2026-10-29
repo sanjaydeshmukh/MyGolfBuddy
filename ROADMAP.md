@@ -18,6 +18,21 @@ User receives golf recommendation in under 5 seconds.
 
 ---
 
+## Phase 1.1 - Daylight Aware Playability
+
+Status: In Progress
+
+Features:
+
+- Sunrise/Sunset retrieval
+- Remaining daylight calculation
+- Daylight-aware golf recommendations
+- Sunset-based playability assessment
+
+Target Version:
+v1.0.1
+---
+
 ## Phase 2 - Nearby Courses
 
 Status: Future

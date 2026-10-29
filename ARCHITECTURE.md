@@ -162,3 +162,33 @@ Golf APIs
 - Accessible
 - Performant
 - Low Maintenance
+
+## Phase 1.1 - Daylight Aware Playability
+
+### New Data Elements
+
+- Sunrise Time
+- Sunset Time
+- Remaining Daylight
+
+### Updated Recommendation Engine
+
+Location
+    ↓
+Weather
+    ↓
+Golf Score
+    ↓
+Daylight Evaluation
+    ↓
+Final Recommendation
+
+### Recommendation Factors
+
+- Weather Conditions
+- Golf Score
+- Sunrise Time
+- Sunset Time
+- Remaining Daylight
+
+A favorable weather score alone does not guarantee a golf recommendation.
