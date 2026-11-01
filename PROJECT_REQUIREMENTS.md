@@ -285,20 +285,24 @@ Results shall be sorted by distance from nearest to farthest.
 Display:
 
 - Course name
+- Address
 - Distance
 - Estimated drive time
 
 Example:
 
 Mercer Oaks Golf Course
+12 xyz road , Princeton, NJ 08536
 11 min drive
 5.8 miles
 
 Mountain View Golf Course
+24 abc road , Princeton, NJ 08536
 13 min drive
 7.2 miles
 
 Hopewell Valley Golf Club
+45 wzp road , Princeton, NJ 08536
 14 min drive
 7.9 miles
 
@@ -320,12 +324,18 @@ Daylight Remaining: 4h 22m
 Recommended Nearby Courses
 
 Mercer Oaks Golf Course
+12 xyz road , Princeton, NJ 08536
+
 11 min drive
 
 Mountain View Golf Course
+34 abc road , Princeton, NJ 08536
+
 13 min drive
 
 Hopewell Valley Golf Club
+45 aln road , Princeton, NJ 08536
+
 14 min drive
 
 Recommendation:
@@ -349,6 +359,8 @@ Daylight Remaining: 59 minutes
 Recommended Nearby Courses
 
 Mercer Oaks Golf Course
+12 xyz road , Princeton, NJ 08536
+
 11 min drive
 
 Recommendation:
@@ -375,6 +387,12 @@ When:
 - After sunset
 - Less than 30 minutes daylight
 - Golf score below recommendation threshold
+Recommendation Thresholds
+
+90-100 Excellent
+75-89 Good
+60-74 Fair
+0-59 Not Recommended
 
 The application shall not display course recommendations.
 
@@ -424,3 +442,21 @@ The release is complete when:
 - No course recommendations are displayed when golf is not recommended.
 - No-results scenarios are handled gracefully.
 - API failures are handled gracefully.
+
+## Security
+
+Google API keys shall not be hardcoded in client-side source code.
+
+Environment variables shall be used where supported.
+
+##
+
+## Mobile Compatibility
+
+The application shall support:
+
+- Android browsers
+- iPhone browsers
+- Responsive design
+- Portrait orientation
+##
