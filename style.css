@@ -352,6 +352,15 @@ h1 {
     min-width: 0;
 }
 
+.daylight-stat[hidden],
+.daylight-summary[hidden] {
+    display: none;
+}
+
+.daylight-grid-night {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .daylight-label,
 .daylight-value {
     display: block;
@@ -381,6 +390,29 @@ h1 {
     color: #e0eee2;
     font-size: 0.87rem;
     line-height: 1.6;
+}
+
+.nearby-courses {
+    margin-top: 16px;
+    padding: 20px;
+}
+
+.nearby-courses[hidden] {
+    display: none;
+}
+
+.nearby-courses h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    letter-spacing: -0.035em;
+}
+
+.course-list {
+    display: grid;
+    gap: 12px;
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
 }
 
 .weather-section {

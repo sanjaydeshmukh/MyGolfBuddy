@@ -19,10 +19,13 @@
         scoreBar: document.querySelector("#score-bar"),
         recommendation: document.querySelector("#recommendation"),
         playabilityGuidance: document.querySelector("#playability-guidance"),
+        daylightGrid: document.querySelector(".daylight-grid"),
+        remainingDaylightStat: document.querySelector("#remaining-daylight").closest(".daylight-stat"),
         sunriseTime: document.querySelector("#sunrise-time"),
         sunsetTime: document.querySelector("#sunset-time"),
         remainingDaylight: document.querySelector("#remaining-daylight"),
         daylightSummary: document.querySelector("#daylight-summary"),
+        nearbyCourses: document.querySelector("#nearby-courses"),
         scoreExplanation: document.querySelector("#score-explanation"),
         temperature: document.querySelector("#temperature"),
         feelsLike: document.querySelector("#feels-like"),
@@ -254,17 +257,17 @@
         const current = parseLocalDateTime(weather.time);
         const sunrise = parseLocalDateTime(weather.sunrise);
         const sunset = parseLocalDateTime(weather.sunset);
-        const isAfterSunset = current.minutes > sunset.minutes;
+        const isNightTime = current.minutes < sunrise.minutes || current.minutes > sunset.minutes;
         const daylightStart = Math.max(current.minutes, sunrise.minutes);
-        const remainingMinutes = isAfterSunset
+        const remainingMinutes = isNightTime
             ? 0
             : Math.max(0, sunset.minutes - daylightStart);
 
         let recommendation;
         let guidance = "";
-        if (isAfterSunset) {
-            recommendation = "🌙 Not Playable Today";
-            guidance = "Try again tomorrow.";
+        if (isNightTime) {
+            recommendation = "🌙 It's Night Time";
+            guidance = "Golf is not recommended right now.";
         } else if (remainingMinutes < 30) {
             recommendation = "🌅 Insufficient Daylight";
             guidance = "Try again tomorrow.";
@@ -288,7 +291,10 @@
             remainingMinutes,
             recommendation,
             guidance,
-            summary: remainingMinutes > 0
+            isNightTime,
+            summary: isNightTime
+                ? ""
+                : remainingMinutes > 0
                 ? `You have approximately ${formatDaylightDuration(remainingMinutes)} of playable daylight remaining.`
                 : "You have no playable daylight remaining today."
         };
@@ -375,10 +381,14 @@
         elements.scoreBar.style.width = `${scoreDetails.score}%`;
         elements.recommendation.textContent = daylightDetails.recommendation;
         elements.playabilityGuidance.textContent = daylightDetails.guidance;
+        elements.daylightGrid.classList.toggle("daylight-grid-night", daylightDetails.isNightTime);
         elements.sunriseTime.textContent = formatLocalTime(daylightDetails.sunrise);
         elements.sunsetTime.textContent = formatLocalTime(daylightDetails.sunset);
         elements.remainingDaylight.textContent = formatCompactDaylightDuration(daylightDetails.remainingMinutes);
         elements.daylightSummary.textContent = daylightDetails.summary;
+        elements.daylightSummary.hidden = daylightDetails.isNightTime;
+        elements.remainingDaylightStat.hidden = daylightDetails.isNightTime;
+        if (daylightDetails.isNightTime) elements.nearbyCourses.hidden = true;
         elements.scoreExplanation.textContent = scoreDetails.explanation;
         elements.temperature.textContent = String(Math.round(weather.temperature));
         elements.feelsLike.textContent = `Feels like ${Math.round(weather.feelsLike)}°F`;
