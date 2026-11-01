@@ -26,6 +26,7 @@
         remainingDaylight: document.querySelector("#remaining-daylight"),
         daylightSummary: document.querySelector("#daylight-summary"),
         nearbyCourses: document.querySelector("#nearby-courses"),
+        courseList: document.querySelector("#course-list"),
         scoreExplanation: document.querySelector("#score-explanation"),
         temperature: document.querySelector("#temperature"),
         feelsLike: document.querySelector("#feels-like"),
@@ -300,6 +301,69 @@
         };
     }
 
+    function fetchNearbyCourses(latitude, longitude) {
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+            throw new Error("A valid location is required to find nearby courses.");
+        }
+
+        return [
+            {
+                name: "Mercer Oaks Golf Course",
+                address: "725 Village Road West, Princeton Junction, NJ",
+                distance: "5.8 miles",
+                driveTime: "11 min drive",
+                mapsLink: "https://www.google.com/maps/dir/?api=1&destination=Mercer%20Oaks%20Golf%20Course%2C%20725%20Village%20Road%20West%2C%20Princeton%20Junction%2C%20NJ"
+            },
+            {
+                name: "Mountain View Golf Course",
+                address: "850 Bear Tavern Road, Ewing, NJ",
+                distance: "7.2 miles",
+                driveTime: "13 min drive",
+                mapsLink: "https://www.google.com/maps/dir/?api=1&destination=Mountain%20View%20Golf%20Course%2C%20850%20Bear%20Tavern%20Road%2C%20Ewing%2C%20NJ"
+            },
+            {
+                name: "Hopewell Valley Golf Club",
+                address: "114 Hopewell Pennington Road, Hopewell, NJ",
+                distance: "7.9 miles",
+                driveTime: "14 min drive",
+                mapsLink: "https://www.google.com/maps/dir/?api=1&destination=Hopewell%20Valley%20Golf%20Club%2C%20114%20Hopewell%20Pennington%20Road%2C%20Hopewell%2C%20NJ"
+            }
+        ];
+    }
+
+    function renderCourses(courses) {
+        elements.courseList.replaceChildren();
+
+        courses.forEach((course) => {
+            const item = document.createElement("li");
+            item.className = "course-item";
+
+            const name = document.createElement("h3");
+            name.className = "course-name";
+            name.textContent = course.name;
+
+            const address = document.createElement("p");
+            address.className = "course-address";
+            address.textContent = course.address;
+
+            const details = document.createElement("p");
+            details.className = "course-details";
+            details.textContent = `${course.distance} · ${course.driveTime}`;
+
+            const mapsLink = document.createElement("a");
+            mapsLink.className = "course-maps-link";
+            mapsLink.href = course.mapsLink;
+            mapsLink.target = "_blank";
+            mapsLink.rel = "noopener noreferrer";
+            mapsLink.textContent = "Open in Google Maps";
+
+            item.append(name, address, details, mapsLink);
+            elements.courseList.append(item);
+        });
+
+        elements.nearbyCourses.hidden = courses.length === 0;
+    }
+
     function capitalize(text) {
         return text.charAt(0).toUpperCase() + text.slice(1);
     }
@@ -367,7 +431,11 @@
             throw new Error(`Weather service returned an error (${response.status}). Please try again.`);
         }
 
-        return validateCurrentWeather(await response.json());
+        return {
+            ...validateCurrentWeather(await response.json()),
+            latitude,
+            longitude
+        };
     }
 
     function renderForecast(weather) {
@@ -388,7 +456,15 @@
         elements.daylightSummary.textContent = daylightDetails.summary;
         elements.daylightSummary.hidden = daylightDetails.isNightTime;
         elements.remainingDaylightStat.hidden = daylightDetails.isNightTime;
-        if (daylightDetails.isNightTime) elements.nearbyCourses.hidden = true;
+        const coursesAreRecommended = !daylightDetails.isNightTime &&
+            daylightDetails.remainingMinutes >= 30 &&
+            scoreDetails.rating !== "Poor";
+        if (coursesAreRecommended) {
+            renderCourses(fetchNearbyCourses(weather.latitude, weather.longitude));
+        } else {
+            elements.nearbyCourses.hidden = true;
+            elements.courseList.replaceChildren();
+        }
         elements.scoreExplanation.textContent = scoreDetails.explanation;
         elements.temperature.textContent = String(Math.round(weather.temperature));
         elements.feelsLike.textContent = `Feels like ${Math.round(weather.feelsLike)}°F`;

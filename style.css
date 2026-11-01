@@ -415,6 +415,40 @@ h1 {
     list-style: none;
 }
 
+.course-item {
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fbfcfa;
+}
+
+.course-name {
+    margin: 0;
+    font-size: 0.96rem;
+    letter-spacing: -0.025em;
+}
+
+.course-address,
+.course-details {
+    margin: 5px 0 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+
+.course-details {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.course-maps-link {
+    display: inline-block;
+    margin-top: 9px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-underline-offset: 2px;
+}
+
 .weather-section {
     margin-top: 27px;
 }
