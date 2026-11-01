@@ -93,6 +93,20 @@ before providing a final golf recommendation.
 | Less than 30 minutes | Insufficient daylight - Try tomorrow |
 | After sunset | Not playable today |
 
+### Night Time Handling
+
+When the current time is after sunset:
+
+- Daylight Remaining shall not be displayed.
+- The application shall not display "0 minutes remaining".
+- The application shall display a nighttime message.
+
+Example:
+
+🌙 It's Night Time
+
+Golf is not recommended right now.
+
 #### Recommendation Engine
 
 Generate a human-readable recommendation.
@@ -160,13 +174,15 @@ Try again tomorrow.
 --
 Example 5 
 
-🌙 Not Playable Today
+🌙 It's Night Time
 
 Golf Score: 90
 
 Sunset: 6:18 PM
 
-Weather conditions may be favorable, however there is no remaining daylight.
+Golf is not recommended right now.
+
+There is no remaining daylight available today.
 
 Try again tomorrow.
 
@@ -210,9 +226,61 @@ Enough daylight remains for a full round of golf.
 ---
 
 
-## Future Requirements
+------------------------------------------------
+## Release 2.0 - Nearby Golf Courses
+------------------------------------------------
 
-### Nearby Golf Courses
+### Goal
+
+Extend MyGolfBuddy from:
+
+"Can I play golf today?"
+
+to
+
+"Can I play golf today, and where should I go?"
+
+---
+
+## Nearby Golf Courses
+
+The application shall display nearby golf courses
+when golf is recommended.
+
+Courses shall be identified using:
+
+- GPS location
+- ZIP code location
+
+---
+
+## Data Source
+
+Primary Source:
+
+- Google Maps Places API
+
+---
+
+## Search Radius
+
+Search for golf courses within:
+
+- 15 mile radius
+
+--
+
+## Course Display Limits
+
+Display up to 5 golf courses.
+
+If fewer than 5 courses are found,
+display all available courses.
+
+Results shall be sorted by distance from nearest to farthest.
+---
+
+## Course Information
 
 Display:
 
@@ -220,41 +288,139 @@ Display:
 - Distance
 - Estimated drive time
 
-Filter:
+Example:
 
-- Within 15 minutes driving time
+Mercer Oaks Golf Course
+11 min drive
+5.8 miles
+
+Mountain View Golf Course
+13 min drive
+7.2 miles
+
+Hopewell Valley Golf Club
+14 min drive
+7.9 miles
 
 ---
 
-### Tee Time Availability
+## Recommendation Integration
+
+When golf is recommended,
+display nearby courses below the recommendation.
+
+Example:
+
+✅ Excellent For Golf
+
+Golf Score: 91
+
+Daylight Remaining: 4h 22m
+
+Recommended Nearby Courses
+
+Mercer Oaks Golf Course
+11 min drive
+
+Mountain View Golf Course
+13 min drive
+
+Hopewell Valley Golf Club
+14 min drive
+
+Recommendation:
+
+Enough daylight remains for a full round.
+
+---
+
+## Limited Daylight Integration
+
+When remaining daylight is less than 60 minutes:
+
+Display only nearby courses within a short drive.
+
+Example:
+
+⚠ Limited Daylight Remaining
+
+Daylight Remaining: 59 minutes
+
+Recommended Nearby Courses
+
+Mercer Oaks Golf Course
+11 min drive
+
+Recommendation:
+
+Enough time for practice or a few holes.
+
+---
+
+## Navigation Support
+
+Each golf course shall include:
+
+- Open in Google Maps
+
+Selecting a course shall launch Google Maps
+for navigation.
+
+---
+
+## Not Playable Today
+
+When:
+
+- After sunset
+- Less than 30 minutes daylight
+- Golf score below recommendation threshold
+
+The application shall not display course recommendations.
+
+Example:
+
+🌙 Not Playable Today
+
+No nearby course recommendations are shown
+because golf is not recommended currently.
+
+---
+## No Courses Found
+
+If no golf courses are found within the search area:
 
 Display:
 
-- Next available tee time
-- Booking URL
+"No nearby golf courses found."
 
-Search window:
+The application shall continue displaying
+weather and golf recommendations normally.
 
-- Next 60 minutes
 
----
+## Error Handling
 
-### Personalization
+If the Google Maps API is unavailable:
 
-Support:
+Display:
 
-- Favorite courses
-- Home location
-- Weather preferences
+"Unable to retrieve nearby golf courses."
 
----
+Golf recommendation functionality shall continue operating.
 
-### Notifications
 
-Support:
+## Release 2.0 Acceptance Criteria
 
-- Daily alerts
-- Weather alerts
-- Tee-time alerts
+The release is complete when:
 
-## Phase 1.1 - Daylight Aware Playability
+- GPS location is supported.
+- ZIP code location is supported.
+- Golf courses are retrieved within a 15 mile radius.
+- Up to 5 nearby courses are displayed.
+- Results are sorted by distance.
+- Course name is displayed.
+- Distance is displayed.
+- Google Maps navigation link is available.
+- No course recommendations are displayed when golf is not recommended.
+- No-results scenarios are handled gracefully.
+- API failures are handled gracefully.
