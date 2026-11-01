@@ -422,6 +422,12 @@ h1 {
     background: #fbfcfa;
 }
 
+.course-message {
+    color: var(--muted);
+    font-size: 0.84rem;
+    line-height: 1.5;
+}
+
 .course-name {
     margin: 0;
     font-size: 0.96rem;

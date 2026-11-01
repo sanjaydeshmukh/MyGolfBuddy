@@ -1,6 +1,13 @@
 (() => {
     "use strict";
 
+    const GOOGLE_API_KEY = "AIzaSyBQ00Rl0ibroVNnhPv4fQnG8cQLQp5bYX4";
+    const GOOGLE_MAPS_SCRIPT_URL = "https://maps.googleapis.com/maps/api/js";
+    const COURSE_SEARCH_RADIUS_METERS = 24140;
+    const MAX_COURSE_RESULTS = 20;
+    const MAX_DISPLAYED_COURSES = 5;
+    const METERS_PER_MILE = 1609.344;
+
     const API_BASE_URL = "https://api.open-meteo.com/v1/forecast";
     const GEOCODING_API_URL = "https://geocoding-api.open-meteo.com/v1/search";
 
@@ -75,6 +82,8 @@
         { minimum: 0, label: "Poor" }
     ];
     let hasManualLocationRequest = false;
+    let nearbyCourseRequestId = 0;
+    let placesLibraryPromise;
 
     function showError(message) {
         elements.errorMessage.textContent = message;
@@ -301,38 +310,117 @@
         };
     }
 
-    function fetchNearbyCourses(latitude, longitude) {
+    function calculateDistanceMiles(origin, destination) {
+        const toRadians = (degrees) => degrees * Math.PI / 180;
+        const latitudeDifference = toRadians(destination.lat - origin.lat);
+        const longitudeDifference = toRadians(destination.lng - origin.lng);
+        const originLatitude = toRadians(origin.lat);
+        const destinationLatitude = toRadians(destination.lat);
+        const haversine = Math.sin(latitudeDifference / 2) ** 2 +
+            Math.cos(originLatitude) * Math.cos(destinationLatitude) *
+            Math.sin(longitudeDifference / 2) ** 2;
+
+        return 3958.8 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+    }
+
+    function loadPlacesLibrary() {
+        if (!GOOGLE_API_KEY.trim()) {
+            return Promise.reject(new Error("Google Places API key is not configured."));
+        }
+
+        if (window.google?.maps?.importLibrary) {
+            return window.google.maps.importLibrary("places");
+        }
+
+        if (placesLibraryPromise) return placesLibraryPromise;
+
+        placesLibraryPromise = new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            const params = new URLSearchParams({
+                key: GOOGLE_API_KEY,
+                loading: "async",
+                v: "weekly"
+            });
+
+            script.src = `${GOOGLE_MAPS_SCRIPT_URL}?${params}`;
+            script.async = true;
+            script.onload = () => {
+                if (!window.google?.maps?.importLibrary) {
+                    reject(new Error("Google Maps JavaScript API did not initialize."));
+                    return;
+                }
+
+                window.google.maps.importLibrary("places").then(resolve, reject);
+            };
+            script.onerror = () => reject(new Error("Google Maps JavaScript API failed to load."));
+            document.head.append(script);
+        });
+        placesLibraryPromise = placesLibraryPromise.catch((error) => {
+            placesLibraryPromise = undefined;
+            throw error;
+        });
+
+        return placesLibraryPromise;
+    }
+
+    async function fetchNearbyCourses(latitude, longitude) {
         if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
             throw new Error("A valid location is required to find nearby courses.");
         }
 
-        return [
-            {
-                name: "Mercer Oaks Golf Course",
-                address: "725 Village Road West, Princeton Junction, NJ",
-                distance: "5.8 miles",
-                driveTime: "11 min drive",
-                mapsLink: "https://www.google.com/maps/dir/?api=1&destination=Mercer%20Oaks%20Golf%20Course%2C%20725%20Village%20Road%20West%2C%20Princeton%20Junction%2C%20NJ"
+        const { Place, SearchNearbyRankPreference } = await loadPlacesLibrary();
+        const origin = { lat: latitude, lng: longitude };
+        const { places = [] } = await Place.searchNearby({
+            fields: ["id", "displayName", "formattedAddress", "location"],
+            locationRestriction: {
+                center: origin,
+                radius: COURSE_SEARCH_RADIUS_METERS
             },
-            {
-                name: "Mountain View Golf Course",
-                address: "850 Bear Tavern Road, Ewing, NJ",
-                distance: "7.2 miles",
-                driveTime: "13 min drive",
-                mapsLink: "https://www.google.com/maps/dir/?api=1&destination=Mountain%20View%20Golf%20Course%2C%20850%20Bear%20Tavern%20Road%2C%20Ewing%2C%20NJ"
-            },
-            {
-                name: "Hopewell Valley Golf Club",
-                address: "114 Hopewell Pennington Road, Hopewell, NJ",
-                distance: "7.9 miles",
-                driveTime: "14 min drive",
-                mapsLink: "https://www.google.com/maps/dir/?api=1&destination=Hopewell%20Valley%20Golf%20Club%2C%20114%20Hopewell%20Pennington%20Road%2C%20Hopewell%2C%20NJ"
-            }
-        ];
+            includedPrimaryTypes: ["golf_course"],
+            maxResultCount: MAX_COURSE_RESULTS,
+            rankPreference: SearchNearbyRankPreference.DISTANCE
+        });
+
+        return places
+            .filter((place) =>
+                place.id &&
+                place.displayName?.text &&
+                place.formattedAddress &&
+                place.location &&
+                Number.isFinite(place.location.lat()) &&
+                Number.isFinite(place.location.lng())
+            )
+            .map((place) => {
+                const destination = {
+                    lat: place.location.lat(),
+                    lng: place.location.lng()
+                };
+                const distanceMiles = calculateDistanceMiles(origin, destination);
+
+                return {
+                    name: place.displayName.text,
+                    address: place.formattedAddress,
+                    distance: `${distanceMiles.toFixed(1)} miles`,
+                    driveTime: "Drive time unavailable",
+                    mapsLink: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.displayName.text)}&destination_place_id=${encodeURIComponent(place.id)}`,
+                    distanceMiles
+                };
+            })
+            .filter((course) => course.distanceMiles <= COURSE_SEARCH_RADIUS_METERS / METERS_PER_MILE)
+            .sort((first, second) => first.distanceMiles - second.distanceMiles)
+            .slice(0, MAX_DISPLAYED_COURSES)
+            .map(({ distanceMiles, ...course }) => course);
     }
 
-    function renderCourses(courses) {
+    function renderCourses(courses, message = "") {
         elements.courseList.replaceChildren();
+
+        if (message) {
+            const status = document.createElement("li");
+            status.className = "course-message";
+            status.textContent = message;
+            elements.courseList.append(status);
+        }
 
         courses.forEach((course) => {
             const item = document.createElement("li");
@@ -361,7 +449,24 @@
             elements.courseList.append(item);
         });
 
-        elements.nearbyCourses.hidden = courses.length === 0;
+        elements.nearbyCourses.hidden = courses.length === 0 && !message;
+    }
+
+    async function loadNearbyCourses(latitude, longitude) {
+        const requestId = ++nearbyCourseRequestId;
+        renderCourses([], "Searching nearby golf courses…");
+
+        try {
+            const courses = await fetchNearbyCourses(latitude, longitude);
+            if (requestId !== nearbyCourseRequestId) return;
+
+            renderCourses(courses, courses.length === 0 ? "No nearby golf courses found." : "");
+        } catch (error) {
+            console.error("Unable to retrieve nearby golf courses:", error);
+            if (requestId !== nearbyCourseRequestId) return;
+
+            renderCourses([], "Unable to retrieve nearby golf courses.");
+        }
     }
 
     function capitalize(text) {
@@ -460,8 +565,9 @@
             daylightDetails.remainingMinutes >= 30 &&
             scoreDetails.rating !== "Poor";
         if (coursesAreRecommended) {
-            renderCourses(fetchNearbyCourses(weather.latitude, weather.longitude));
+            void loadNearbyCourses(weather.latitude, weather.longitude);
         } else {
+            nearbyCourseRequestId += 1;
             elements.nearbyCourses.hidden = true;
             elements.courseList.replaceChildren();
         }
