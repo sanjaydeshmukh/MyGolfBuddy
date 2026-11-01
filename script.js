@@ -3,9 +3,6 @@
 
     const GOOGLE_API_KEY = "AIzaSyBQ00Rl0ibroVNnhPv4fQnG8cQLQp5bYX4";
     const GOOGLE_MAPS_SCRIPT_URL = "https://maps.googleapis.com/maps/api/js";
-    const GOOGLE_MAPS_SCRIPT_SELECTOR = 'script[src*="maps.googleapis.com/maps/api/js"]';
-    const PLACES_LIBRARY_POLL_INTERVAL_MS = 100;
-    const PLACES_LIBRARY_MAX_POLLS = 50;
     const COURSE_SEARCH_RADIUS_METERS = 24140;
     const MAX_COURSE_RESULTS = 20;
     const MAX_DISPLAYED_COURSES = 5;
@@ -338,44 +335,25 @@
         if (placesLibraryPromise) return placesLibraryPromise;
 
         placesLibraryPromise = new Promise((resolve, reject) => {
-            let script = document.querySelector(GOOGLE_MAPS_SCRIPT_SELECTOR);
-            let pollCount = 0;
+            const script = document.createElement("script");
+            const params = new URLSearchParams({
+                key: GOOGLE_API_KEY,
+                loading: "async",
+                v: "weekly"
+            });
 
-            const checkImportLibrary = () => {
-                const importLibrary = window.google?.maps?.importLibrary;
-                if (importLibrary) {
-                    Promise.resolve()
-                        .then(() => importLibrary.call(window.google.maps, "places"))
-                        .then(resolve, reject);
-                    return;
-                }
-
-                pollCount += 1;
-                if (pollCount >= PLACES_LIBRARY_MAX_POLLS) {
+            script.src = `${GOOGLE_MAPS_SCRIPT_URL}?${params}`;
+            script.async = true;
+            script.onload = () => {
+                if (!window.google?.maps?.importLibrary) {
                     reject(new Error("Google Maps JavaScript API did not initialize."));
                     return;
                 }
 
-                window.setTimeout(checkImportLibrary, PLACES_LIBRARY_POLL_INTERVAL_MS);
+                window.google.maps.importLibrary("places").then(resolve, reject);
             };
-
-            if (!script) {
-                script = document.createElement("script");
-                const params = new URLSearchParams({
-                    key: GOOGLE_API_KEY,
-                    loading: "async",
-                    v: "weekly"
-                });
-
-                script.src = `${GOOGLE_MAPS_SCRIPT_URL}?${params}`;
-                script.async = true;
-                script.addEventListener("error", () => {
-                    reject(new Error("Google Maps JavaScript API failed to load."));
-                }, { once: true });
-                document.head.append(script);
-            }
-
-            checkImportLibrary();
+            script.onerror = () => reject(new Error("Google Maps JavaScript API failed to load."));
+            document.head.append(script);
         });
         placesLibraryPromise = placesLibraryPromise.catch((error) => {
             placesLibraryPromise = undefined;
@@ -620,21 +598,7 @@
     async function loadForecast(latitude, longitude, locationName) {
         clearError();
         elements.forecast.hidden = true;
-        const isLocationNamePromise = locationName && typeof locationName.then === "function";
-        elements.locationHeading.textContent = isLocationNamePromise
-            ? "Your current location"
-            : locationName || "Your local forecast";
-        if (isLocationNamePromise) {
-            Promise.resolve(locationName)
-                .then((resolvedLocationName) => {
-                    if (!hasManualLocationRequest && resolvedLocationName) {
-                        elements.locationHeading.textContent = resolvedLocationName;
-                    }
-                })
-                .catch((error) => {
-                    console.error("Unable to resolve GPS location name:", error);
-                });
-        }
+        elements.locationHeading.textContent = locationName || "Your local forecast";
         elements.locationStatus.textContent = "Getting current weather…";
         elements.coordinates.textContent = `${formatCoordinate(latitude)}, ${formatCoordinate(longitude)}`;
         elements.coordinates.hidden = false;
@@ -661,20 +625,13 @@
             return;
         }
 
-        console.log("GPS request started");
         navigator.geolocation.getCurrentPosition(
             ({ coords }) => {
-                console.log("GPS success", coords.latitude, coords.longitude);
                 if (!hasManualLocationRequest) {
-                    void loadForecast(
-                        coords.latitude,
-                        coords.longitude,
-                        findGpsLocationName(coords.latitude, coords.longitude)
-                    );
+                    loadForecast(coords.latitude, coords.longitude, "Your current location");
                 }
             },
             (error) => {
-                console.log("GPS error", error);
                 if (hasManualLocationRequest) return;
 
                 const messageByCode = {
@@ -686,35 +643,6 @@
             },
             { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
         );
-    }
-
-    async function findGpsLocationName(latitude, longitude) {
-        try {
-            await loadPlacesLibrary();
-            const { Geocoder } = await window.google.maps.importLibrary("geocoding");
-            const geocoder = new Geocoder();
-            const { results } = await geocoder.geocode({
-                location: { lat: latitude, lng: longitude }
-            });
-            const addressComponents = results[0]?.address_components || [];
-            const city = addressComponents.find((component) =>
-                component.types.includes("locality")
-            )?.long_name || addressComponents.find((component) =>
-                component.types.includes("postal_town")
-            )?.long_name;
-            const state = addressComponents.find((component) =>
-                component.types.includes("administrative_area_level_1")
-            )?.long_name;
-
-            if (!city || !state) {
-                throw new Error("Reverse geocoding did not return a city and state.");
-            }
-
-            return `${city}, ${state}`;
-        } catch (error) {
-            console.error("Unable to reverse geocode GPS coordinates:", error);
-            return "Your current location";
-        }
     }
 
     async function findZipLocation(zipCode) {
