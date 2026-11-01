@@ -279,6 +279,24 @@ display all available courses.
 
 Results shall be sorted by distance from nearest to farthest.
 ---
+### Distance and Drive Time Display
+
+Display distance for all nearby courses.
+
+Drive time shall only be displayed when available.
+
+If drive time is unavailable, the application shall display distance only.
+
+Examples:
+
+5.8 miles
+
+7.2 miles · 13 min drive
+
+The application shall not display:
+
+"Drive time unavailable"
+--
 
 ## Course Information
 

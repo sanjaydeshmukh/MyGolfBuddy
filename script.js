@@ -370,7 +370,7 @@
 
         const { Place, SearchNearbyRankPreference } = await loadPlacesLibrary();
         const origin = { lat: latitude, lng: longitude };
-        const { places = [] } = await Place.searchNearby({
+        const response = await Place.searchNearby({
             fields: ["id", "displayName", "formattedAddress", "location"],
             locationRestriction: {
                 center: origin,
@@ -380,11 +380,12 @@
             maxResultCount: MAX_COURSE_RESULTS,
             rankPreference: SearchNearbyRankPreference.DISTANCE
         });
+        const places = response.places || [];
 
         return places
             .filter((place) =>
                 place.id &&
-                place.displayName?.text &&
+                place.displayName &&
                 place.formattedAddress &&
                 place.location &&
                 Number.isFinite(place.location.lat()) &&
@@ -398,11 +399,11 @@
                 const distanceMiles = calculateDistanceMiles(origin, destination);
 
                 return {
-                    name: place.displayName.text,
+                    name: place.displayName,
                     address: place.formattedAddress,
                     distance: `${distanceMiles.toFixed(1)} miles`,
-                    driveTime: "Drive time unavailable",
-                    mapsLink: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.displayName.text)}&destination_place_id=${encodeURIComponent(place.id)}`,
+                    driveTime: "",
+                    mapsLink: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.displayName)}&destination_place_id=${encodeURIComponent(place.id)}`,
                     distanceMiles
                 };
             })
@@ -436,7 +437,9 @@
 
             const details = document.createElement("p");
             details.className = "course-details";
-            details.textContent = `${course.distance} · ${course.driveTime}`;
+            details.textContent = course.driveTime
+                ? `${course.distance} · ${course.driveTime}`
+                : course.distance;
 
             const mapsLink = document.createElement("a");
             mapsLink.className = "course-maps-link";
